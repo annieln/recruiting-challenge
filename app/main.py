@@ -13,7 +13,6 @@ app = FastAPI()
 
 LBFmodel = "lbfmodel.yaml"
 profiles = []
-images = []
 
 facial_landmarks_idx = OrderedDict([
 	("mouth", (48, 68)),
@@ -30,7 +29,7 @@ class Profile(BaseModel):
 	gender: str
 	race: str
 	age: float
-	features: dict
+	landmarks: dict
 
 
 @app.post("/create-profile", response_model=Profile)
@@ -49,7 +48,7 @@ async def create_profile(file: UploadFile = File(...)):
 	profile = analyze_face(image)
 	profiles.append(profile)
 
-	return profile
+	return {"description": f"{profile.gender} face of estimated age {profile.age} years and estimated {profile.race} descent."}
 
 @app.get("/get-profile/{profile_id}", response_model=Profile)
 def get_profile(profile_id: int) -> Profile:
@@ -88,7 +87,30 @@ async def match_profile(file: UploadFile = File(...)):
 			return profile
 	raise HTTPException(status_code=404, detail="No matching profile found")
 
-	#### Helper functions ####
+@app.get("/landmarks", response_model=Profile)
+async def get_landmarks():
+	"""
+	Get the landmarks of the requested face.
+
+	Parameters:
+
+	Returns:
+
+	"""
+
+@app.get("/landmarks", response_model=Profile)
+async def get_jaw():
+	"""
+	Get the facial landmark points of the jaw.
+	"""
+
+@app.get("/landmarks", response_model=Profile)
+async def get_eyebrows():
+	"""
+	Get the facial landmark points of the jaw.
+	"""
+
+#### Helper functions ####
 
 def analyze_face(image):
 	img = convert_from_image_to_cv2(image)
@@ -99,7 +121,7 @@ def analyze_face(image):
 		img_path = img
 	)
 
-	return Profile(index=len(profiles), gender=objs[0]["dominant_gender"], race=objs[0]["dominant_race"], age=objs[0]["age"], features=features)
+	return Profile(index=len(profiles), gender=objs[0]["dominant_gender"], race=objs[0]["dominant_race"], age=objs[0]["age"], landmarks=features)
 
 def detect_face(image):
 	gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -111,6 +133,11 @@ def detect_face(image):
 	faces = face_classifier.detectMultiScale(
 		gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(40, 40)
 	)
+
+	if len(faces) == 0:
+		raise HTTPException(status_code=404, detail="No faces found!")
+	elif len(faces) > 1:
+		raise HTTPException(status_code=404, detail="More than one face detected!")
 
 	landmark_detector = cv2.face.createFacemarkLBF()
 	landmark_detector.loadModel(LBFmodel)
@@ -127,47 +154,3 @@ def detect_face(image):
 
 def convert_from_image_to_cv2(img: Image) -> np.ndarray:
 	return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
-
-# def detect_landmarks(image):
-# 	img = convert_from_image_to_cv2(image)
-# 	gray_image = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-# 	face_classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-# 	faces = face_classifier.detectMultiScale(
-# 		gray_image, scaleFactor=1.1, minNeighbors=5, minSize=(40, 40)
-# 	)
-
-# 	for (x, y, w, h) in faces:
-# 		cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-
-# 	landmark_detector = cv2.face.createFacemarkLBF()
-# 	landmark_detector.loadModel(LBFmodel)
-# 	_, landmarks = landmark_detector.fit(img, faces)
-# 	print(len(landmarks[0][0]))
-
-# 	colors = [(19, 199, 109), (79, 76, 240), (230, 159, 23),
-# 			(168, 100, 168), (158, 163, 32),
-# 			(163, 38, 32), (180, 42, 220)]
-
-# 	for (i, name) in enumerate(FACIAL_LANDMARKS_IDXS.keys()):
-# 		(j, k) = FACIAL_LANDMARKS_IDXS[name]
-# 		pts = landmarks[0][0][j:k]
-# 		print(pts)
-# 		if name == "jaw":
-# 			for l in range(1, len(pts)):
-# 				ptA = tuple([int(pts[l - 1][0]), int(pts[l - 1][1])])
-# 				print(ptA)
-# 				ptB = tuple([int(pts[l][0]), int(pts[l][1])])
-# 				print(ptB)
-# 				cv2.line(img, ptA, ptB, colors[i], 2)
-# 		else:
-# 			hull = cv2.convexHull(pts)
-# 			cv2.drawContours(img, np.int32([hull]), -1, colors[i], -1)
-
-# 	for landmark in landmarks:
-# 		for x,y in landmark[0]:
-# 			# display landmarks on "image_cropped"
-# 			# with white colour in BGR and thickness 1
-# 			cv2.circle(img, (int(x), int(y)), 1, (0, 255, 0), 4)
-# 	cv2.imwrite("written.png", img)
