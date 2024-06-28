@@ -2,5 +2,7 @@ fastapi
 pillow
 deepface
 tf-keras
-cv2
 numpy
+opencv-contrib-python
+pytest
+torch
