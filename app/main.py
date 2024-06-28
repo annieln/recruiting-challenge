@@ -36,7 +36,13 @@ class Profile(BaseModel):
 @app.post("/profiles/")
 async def create_profile(file: UploadFile = File(...)):
 	"""
-	Create a new profile.
+	Generates a new profile from an uploaded image using facial analysis.
+
+	Parameters:
+	- file (UploadFile): An image file containing a person's face.
+
+	Returns:
+	- message : A message indicating whether a profile was successfully generated or if a spoof was detected.
 	"""
 	if file.content_type not in ["image/jpeg", "image/png"]:
 		raise HTTPException(status_code=415, detail="Unsupported file format. Please upload JPEG or PNG.")
@@ -58,6 +64,16 @@ async def create_profile(file: UploadFile = File(...)):
 async def update_profile(profile_id: int, file: UploadFile = File(...)):
 	"""
 	Update an existing profile with new image and information.
+
+	Parameters:
+	- profile_id (int) : The ID of the profile to be replaced.
+	- file (UploadFile): An image file containing a person's face.
+
+	Returns:
+	- message : A message indicating whether a profile was successfully updated or if a spoof was detected.
+
+	Raises:
+	- HTTPException : If the profile at the given ID cannot be found.
 	"""
 	if profile_id < len(profiles):
 		if file.content_type not in ["image/jpeg", "image/png"]:
@@ -82,6 +98,9 @@ async def update_profile(profile_id: int, file: UploadFile = File(...)):
 async def get_profiles():
 	"""
 	Get a list of all existing profiles.
+
+	Returns:
+	- list[Profiles] : A list of all Profile objects.
 	"""
 	return profiles
 
@@ -94,7 +113,10 @@ def get_profile(profile_id: int) -> Profile:
 	- profile_id (int) : The index of the profile.
 
 	Returns:
-		Profile : The requested profile.
+	- Profile : The requested profile at the given ID.
+
+	Raises:
+	- HTTPException : If the profile at the given ID cannot be found.
 	"""
 	if profile_id < len(profiles):
 		return profiles[profile_id]
@@ -105,6 +127,15 @@ def get_profile(profile_id: int) -> Profile:
 async def delete_profile(profile_id: int):
 	"""
 	Delete a profile based on profile ID.
+
+	Parameters:
+	- profile_id (int) : The index of the profile.
+
+	Returns:
+	- message : A message indicating whether that the profile was deleted successfully.
+
+	Raises:
+	- HTTPException : If the profile at the given ID cannot be found.
 	"""
 	if profile_id < len(profiles):
 		profiles.pop(profile_id)
@@ -119,10 +150,12 @@ async def identify_profile(file: UploadFile = File(...)):
 	Check if the face in an image matches any of the recorded profiles.
 
 	Parameters:
-		file (UploadFile) : The image of a face.
+	- file (UploadFile) : The image of a face.
 
 	Returns:
-		Profile : The matching profile, if there is one.
+	- Profile : The profile ID of the matching profile, if there is one.
+	Otherwise, a message indicating there is no match or that a spoof
+	was detected in the uploaded image.
 	"""
 	if file.content_type not in ["image/jpeg", "image/png"]:
 		raise HTTPException(status_code=415, detail="Unsupported file format. Please upload JPEG or PNG.")
@@ -143,11 +176,17 @@ async def identify_profile(file: UploadFile = File(...)):
 @app.get("/profiles/{profile_id}/landmarks")
 async def get_landmarks(profile_id: int):
 	"""
-	Get the facial landmarks of the requested face.
+	Get the facial landmarks of the profile given by the profile ID.
 
 	Parameters:
+	- profile_id (int) : The index of the profile.
 
 	Returns:
+	- landmarks (dict) : A dictionary where keys are the facial features and 
+	values are the associated points within the image.
+
+	Raises:
+	- HTTPException : If the profile at the given ID cannot be found.
 
 	"""
 	if profile_id < len(profiles):
@@ -159,11 +198,16 @@ async def get_landmarks(profile_id: int):
 @app.get("/profiles/{profile_id}/age")
 async def get_age(profile_id: int):
 	"""
-	Get the age of the requested profile.
+	Get the age of the profile given by the profile ID.
 
 	Parameters:
+	- profile_id (int) : The index of the profile.
 
 	Returns:
+	- age (int) : The estimated age of the face in the profile.
+
+	Raises:
+	- HTTPException : If the profile at the given ID cannot be found.
 
 	"""
 	if profile_id < len(profiles):
@@ -175,12 +219,16 @@ async def get_age(profile_id: int):
 @app.get("/profiles/{profile_id}/gender")
 async def get_gender(profile_id: int):
 	"""
-	Get the gender of the requested profile.
+	Get the gender of the profile given by the profile ID.
 
 	Parameters:
+	- profile_id (int) : The index of the profile.
 
 	Returns:
+	- gender (int) : The estimated gender of the face in the profile.
 
+	Raises:
+	- HTTPException : If the profile at the given ID cannot be found.
 	"""
 	if profile_id < len(profiles):
 		profile = profiles[profile_id]
@@ -191,12 +239,16 @@ async def get_gender(profile_id: int):
 @app.get("/profiles/{profile_id}/race")
 async def get_race(profile_id: int):
 	"""
-	Get the estimated race of the requested profile.
+	Get the race of the profile given by the profile ID.
 
 	Parameters:
+	- profile_id (int) : The index of the profile.
 
 	Returns:
+	- race (int) : The estimated race of the face in the profile.
 
+	Raises:
+	- HTTPException : If the profile at the given ID cannot be found.
 	"""
 	if profile_id < len(profiles):
 		profile = profiles[profile_id]
@@ -207,6 +259,11 @@ async def get_race(profile_id: int):
 #### Helper functions ####
 
 def analyze_face(image):
+	"""
+	Analyze the face in a given image and returns a Profile.
+
+	Detects whether the image is a spoof and performs facial analysis.
+	"""
 
 	objs = DeepFace.analyze(
 		img_path = image,
@@ -218,6 +275,10 @@ def analyze_face(image):
 	return Profile(id=len(profiles), filename="", gender=objs[0]["dominant_gender"], race=objs[0]["dominant_race"], age=objs[0]["age"], landmarks=features)
 
 def detect_face(image):
+	"""
+	Performs facial analysis using Haar Cascade algorithm for
+	face detection and LBF for facial landmark extraction.
+	"""
 	gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 	face_classifier = cv2.CascadeClassifier(
@@ -242,4 +303,7 @@ def detect_face(image):
 	return faces, facial_features
 
 def convert_from_image_to_cv2(img: Image) -> np.ndarray:
+	"""
+	Converts an image to an accepted format for OpenCV.
+	"""
 	return cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
