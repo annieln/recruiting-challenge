@@ -6,13 +6,13 @@ from main import app, profiles, Profile
 client = TestClient(app)
 
 # Load an actual test image
-with open("test_image.jpg", "rb") as image_file:
+with open("images/test_image.jpg", "rb") as image_file:
     TEST_IMAGE = image_file.read()
 
-with open("test_image_2.jpg", "rb") as image_file:
+with open("images/test_image_2.jpg", "rb") as image_file:
     TEST_NO_MATCH = image_file.read()
 
-with open("test_fake.jpeg", "rb") as image_file:
+with open("images/test_fake.jpeg", "rb") as image_file:
     TEST_FAKE = image_file.read()
 
 def test_create_profile():
