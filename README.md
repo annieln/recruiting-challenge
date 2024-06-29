@@ -63,7 +63,7 @@ __OpenCV__ is utilized for its robust capabilities in image processing and facia
 __DeepFace__ is used for its facial recognition and verification services. It uses pre-trained models to perform tasks such as age estimation, gender detection, and race estimation, which helps generate a generic persona for the detected face in an uploaded image. This FastAPI application also employs DeepFace for its face anti-spoofing analysis, which is vital in detecting real images from fake ones.
 
 ### Data Storage and Management
-The project utilizes in-memory data structures for simplicity, as it allows for quick access and manipulation of data, which is suitable for the initial development and deployment process of this small-scale application. However, data is lost when the server is restarted, so a future consideration for persistent and scalable data storage would involve using a database, e.g. SQLite, PostgreSQL.
+The project utilizes in-memory data structures for simplicity, as it allows for quick access and manipulation of data, which is suitable for the initial development and deployment process of this small-scale application.
 
 - The `profiles` list as an in-memory repository for storing `Profile` objects generated during the application's lifecycle. Each `Profile` includes essential descriptors such as id, filename, gender, race, age, and landmarks.
 - The `image` list stores process processed images converted to OpenCV format. This facilitates rapid access and manipulation of image data for facial analysis and comparison tasks.
@@ -72,3 +72,12 @@ To ensure proper management and maniulation of data, uploaded images are validat
 
 ### Testing
 The tests implemented in test_main.py primarily serve as unit tests for the FastAPI application. Each test function (e.g., `test_create_profile`, `test_update_profile`) verifies a specific endpoint or functionality of the application.
+
+## Future Improvements
+- __Multi-Profile Creation__: Currently, this application only supports single-face detection within an image and therefore single-profile creation. The application can be extended to detect multiple faces within an image and create a profile for each face in the future.
+- __Advanced Facial Analysis__: This application only characterizes faces by demographic (estimated age, race, gender) but more work can be done in the realm of classifying faces by visible characterizes such as face shape, eye color, etc. I wasn't able to find any publicly available models to support these descriptors, but as further research is done in this space and models become available or through the employment of numerical methods, we can use the facial landmarks we extracted to achieve these additional descriptors, which will supply additional vital information about each profile.
+- __Database Integration__: This application uses in-memory data storage which means data is lost when the server is restarted, so a future consideration for persistent and scalable data storage would involve using a database, e.g. SQLite, PostgreSQL.
+- __Security and Authentication__: As an application that deals with user's facial image data, we should consider aspects such as authentication/authorization, data encryption, etc. to ensure sensitive data is protected.
+
+## Reflections
+Fun fact, this was my first time building an API from scratch as well as my first time working with FastAPI - and it was a really fun experience! I spent most of my time thinking about what endpoints would be valuable to users. I was envisioning an application that not only verifes whether an face in an image is real or fake, but I was also thinking about programmers, data scientists, statisticians who might want to work with facial and demographic data, hence the additional endpoints for age, race, gender, and landmarks. I'm a big CV enthusiast but haven't really delved into the facial recognition, so this was also a great opportunity to scour through various online resources on image processing/analysis and face detection.
